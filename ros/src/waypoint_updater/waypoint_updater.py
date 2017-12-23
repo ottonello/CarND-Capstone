@@ -1,4 +1,3 @@
-max_local_distance = 20.0      # Max waypoint distance we admit for a local minimum (m)
 #!/usr/bin/env python
 
 import rospy
@@ -34,6 +33,7 @@ class WaypointUpdater(object):
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
+
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # Add State variables
@@ -50,9 +50,8 @@ class WaypointUpdater(object):
             rate.sleep()
 
     def update_and_publish(self):
-        next_wp = self._find_next_waypoint()
-        if next_wp:
-            self.next_waypoint = next_wp
+        if self._find_next_waypoint() is not None:
+            num_base_wp = len(self.base_waypoints)
             waypoint_idx = [idx % num_base_wp for idx in range(self.next_waypoint,self.next_waypoint+LOOKAHEAD_WPS)]
             final_waypoints = [self.base_waypoints[wp] for wp in waypoint_idx]
             
@@ -60,6 +59,9 @@ class WaypointUpdater(object):
             self.publish_msg(final_waypoints)
 
     def _find_next_waypoint(self):
+        if not self.current_pose or not self.base_waypoints:
+            return
+
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
         wp = None
@@ -69,15 +71,14 @@ class WaypointUpdater(object):
         
         # Find closest waypoint
         n_waypoints = len(self.base_waypoints)
-        for i in range(idx_offset, idx_offset + n_waypoints):
-            idx = i % n_waypoints
-            
-            wp_d = dl(self,current_pose.position, self.base_waypoints[idx].pos.pos.position)
+        for i in range(n_waypoints):
+            wp_d = dl(self.current_pose.position, self.base_waypoints[i].pose.pose.position)
 
             if wp_d < dist:
                 dist = wp_d
-                wp = idx
+                wp = i
 
+        self.next_waypoint = wp
         return wp
 
     def publish_msg(self, final_waypoints):
