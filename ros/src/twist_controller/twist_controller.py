@@ -2,6 +2,7 @@ from pid import PID
 from yaw_controller import YawController
 from lowpass import LowPassFilter
 import math
+import rospy
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
@@ -10,11 +11,11 @@ ONE_MPH = 0.44704
 class Controller(object):
     def __init__(self, params):
         self.params = params
-        min_speed = 0.1
+        min_speed = 0.0
 
         self.linear_pid = PID(kp=0.8, ki=0, kd=0.05, mn=self.params.decel_limit, mx=0.5 * self.params.accel_limit)
         self.yaw_controller = YawController(self.params.wheel_base, self.params.steer_ratio, min_speed, self.params.max_lat_accel, self.params.max_steer_angle)
-        self.steering_pid = PID(kp=0.15, ki=0.001, kd=0.1, mn=-self.params.max_steer_angle, mx=self.params.max_steer_angle)
+        self.steering_pid = PID(kp=0.25, ki=0.001, kd=0.5, mn=-self.params.max_steer_angle, mx=self.params.max_steer_angle)
         self.throttle_lpf = LowPassFilter(tau = 3, ts = 1)
         self.steer_lpf = LowPassFilter(tau = 3, ts = 1)
 
@@ -29,7 +30,7 @@ class Controller(object):
         throttle = self.linear_pid.step(linear_velocity_error, duration_in_seconds)
         throttle = self.throttle_lpf.filt(throttle)
 
-        if(throttle < 0):
+        if(throttle <= 0):
             deceleration = abs(throttle)
             total_mass = self.params.vehicle_mass + self.params.fuel_capacity * GAS_DENSITY
             brake = total_mass * self.params.wheel_radius * deceleration if deceleration > self.params.brake_deadband else 0.
