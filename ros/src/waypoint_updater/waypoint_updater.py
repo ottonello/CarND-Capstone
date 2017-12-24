@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
+import copy
 from geometry_msgs.msg import PoseStamped, Pose
 from styx_msgs.msg import Lane, Waypoint
+from std_msgs.msg import Int32
 
 import math
 import sys
@@ -30,18 +32,24 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
+        rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
+
         # Add State variables
         self.base_waypoints = []  # List of waypoints, as received from /base_waypoints
         self.base_wp_orig_v = []  # Original velocities of the waypoints
         self.next_waypoint = None # Next waypoint in car direction
         self.current_pose = None # Car pose
+        self.red_light_waypoint = None # Waypoint index of the next red light
         self.msg_seq = 0 # Sequence number of /final_waypoints message
+        self.stop_distance = 20.0
+        self.accel = rospy.get_param('~target_brake_accel', -1.)     # Target brake acceleration
         
         # Launch periodic publishing into /final_waypoints
         rate = rospy.Rate(PUBLISH_RATE)
@@ -55,8 +63,44 @@ class WaypointUpdater(object):
             waypoint_idx = [idx % num_base_wp for idx in range(self.next_waypoint,self.next_waypoint+LOOKAHEAD_WPS)]
             final_waypoints = [self.base_waypoints[wp] for wp in waypoint_idx]
             
+            try:
+                red_idx = waypoint_idx.index(self.red_light_waypoint)
+                if self.red_light_waypoint:
+                    final_waypoints = self._decelerate(final_waypoints, red_idx, self.stop_distance)
+            except ValueError:
+                # No red light available: self.red_light_waypoint is None or not in final_waypoints
+                red_idx = None
+
             # Publish final waypoints
             self.publish_msg(final_waypoints)
+
+    def _decelerate(self, waypoints, stop_index, stop_distance):
+        """
+        Decelerate a list of wayponts so that they stop on stop_index
+        """
+        if stop_index <= 0:
+            return waypoints
+
+        new_waypoints = copy.deepcopy(waypoints)
+        
+        dist = self.distance(new_waypoints, 0, stop_index)
+        step = dist / stop_index
+        # Generate waypoint velocity by traversing the waypoint list backwards:
+        #  - Everything beyond stop_index will have velocity = 0
+        #  - Before that, constant (de)cceleration is applied until reaching
+        #    previous waypoint velocity.
+        # We assume constant distance between consecutive waypoints for simplicity
+        v = 0.
+        d = 0.
+        for idx in reversed(range(len(new_waypoints))):
+            if idx < stop_index:
+                d += step
+                if d > self.stop_distance:
+                    v = math.sqrt(2*abs(self.accel)*(d-stop_distance))
+            if v < self.get_waypoint_velocity(new_waypoints, idx):
+                self.set_waypoint_velocity(new_waypoints, idx, v)
+
+        return new_waypoints
 
     def _find_next_waypoint(self):
         if not self.current_pose or not self.base_waypoints:
@@ -102,8 +146,15 @@ class WaypointUpdater(object):
 
 
     def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        rospy.logwarn("Got traffic waypoiny: %s", str(msg.data))
+        prev_red_light_waypoint = self.red_light_waypoint
+        self.red_light_waypoint = msg.data if msg.data else None
+
+        if prev_red_light_waypoint != self.red_light_waypoint:
+            # if debugging:
+            rospy.loginfo("TrafficLight changed: %s", str(self.red_light_waypoint))
+            # if publish_on_light_change:
+                # self.update_and_publish() # Refresh if next traffic light has changed
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
