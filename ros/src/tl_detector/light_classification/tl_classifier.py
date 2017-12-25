@@ -1,9 +1,50 @@
 from styx_msgs.msg import TrafficLight
+import rospy
+import rospkg
+import numpy as np
+import os
+import sys
+import tensorflow as tf
+from collections import defaultdict
+from io import StringIO
+from util import label_map_util
+import time
 
 class TLClassifier(object):
-    def __init__(self):
-        #TODO load classifier
-        pass
+    def __init__(self, sim):
+        # Load categories
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        labels_file = curr_dir + '/label_map.pbtxt'
+        num_classes = 14
+        label_map = label_map_util.load_labelmap(labels_file)
+        categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=num_classes,
+                                                                    use_display_name=True)        
+        self.category_index = label_map_util.create_category_index(categories)
+        self.image_np_deep = None
+
+        # Load inference graph
+        frozen_graph_file = curr_dir + '/frozen_sim_inception/frozen_inference_graph.pb'
+        self.detection_graph = tf.Graph()
+        with self.detection_graph.as_default():
+            od_graph_def = tf.GraphDef()
+
+            with tf.gfile.GFile(frozen_graph_file, 'rb') as fid:
+                serialized_graph = fid.read()
+                od_graph_def.ParseFromString(serialized_graph)
+                tf.import_graph_def(od_graph_def, name='')
+            
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+     
+            self.sess = tf.Session(graph=self.detection_graph, config=config)
+
+        # Input and output tensors
+        self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+        self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+        self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
+        self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
+        self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
+
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -15,5 +56,35 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        #TODO implement light color prediction
-        return TrafficLight.UNKNOWN
+        traffic_light = TrafficLight.UNKNOWN
+
+        image_expanded = np.expand_dims(image, axis=0)
+        with self.detection_graph.as_default():
+            (boxes, scores, classes, num) = self.sess.run(
+                [self.detection_boxes, self.detection_scores,
+                 self.detection_classes, self.num_detections],
+                feed_dict={self.image_tensor: image_expanded})
+
+        boxes = np.squeeze(boxes)
+        scores = np.squeeze(scores)
+        classes = np.squeeze(classes).astype(np.int32)
+
+        min_score_threshold = .50
+        
+        for i in range(boxes.shape[0]):
+            if scores is None or scores[i] > min_score_threshold:
+
+                class_name = self.category_index[classes[i]]['name']
+
+                if class_name == 'Red':
+                    self.traffic_light = TrafficLight.RED
+                elif class_name == 'Green':
+                    self.traffic_light = TrafficLight.GREEN
+                elif class_name == 'Yellow':
+                    self.traffic_light = TrafficLight.YELLOW
+
+                self.image_np_deep = image
+
+        rospy.loginfo('tl found: {}'.format(class_name))
+
+        return self.current_light
