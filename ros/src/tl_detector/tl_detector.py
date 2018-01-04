@@ -21,7 +21,6 @@ class TLDetector(object):
 
         self.pose = None
         self.waypoints = None
-        self.camera_image = None
         self.lights = []
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
@@ -40,11 +39,16 @@ class TLDetector(object):
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
     
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
+        self.traffic_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
         self.listener = tf.TransformListener()
+
+        self.best_waypoint = 0
+        self.last_car_position = 0
+        self.last_light_pos_wp = []
+        self.camera_image = None
 
         self.TrafficLightState = rospy.Publisher('/traffic_light_state', Int32, queue_size=1)
 
@@ -54,9 +58,6 @@ class TLDetector(object):
         self.state_count = 0
         self.lights = []
 
-        self.best_waypoint = 0
-        self.last_car_position = 0
-        self.last_light_pos_wp = []
 
         self.FAR_LIGHT_DIST = 100.0
 
@@ -82,23 +83,19 @@ class TLDetector(object):
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
+      # rospy.loginfo('light {},  state {}, self.state {}, state_count= {}'.format(light_wp, state, self.state, self.state_count))
 
-        '''
-        Publish upcoming red lights at camera frequency.
-        Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
-        of times till we start using it. Otherwise the previous stable state is
-        used.
-        '''
         if self.state != state:
             self.state_count = 0
             self.state = state
-        elif self.state_count >= self.STATE_COUNT_THRESHOLD:
+        elif self.state_count >= STATE_COUNT_THRESHOLD:
+
             self.last_state = self.state
             light_wp = light_wp if state == TrafficLight.RED else -1
             self.last_wp = light_wp
-            self.upcoming_red_light_pub.publish(Int32(light_wp))
+            self.traffic_light_pub.publish(Int32(light_wp))
         else:
-            self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+            self.traffic_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
     def get_class_name(self, code):
@@ -205,13 +202,14 @@ class TLDetector(object):
         light = light_positions[light_idx]
 
         light_distance = self.euclidean_distance_light(light, self.waypoints.waypoints[self.last_car_position].pose.pose.position)
-        rospy.loginfo('light_distance:: {}'.format(light_distance))
+        # rospy.loginfo('light {},  distance {}'.format(light, light_distance))
 
         if light:
             if (light_distance >= self.FAR_LIGHT_DIST):
                 return -1, TrafficLight.UNKNOWN
             else:
                 state = self.light_classifier.get_classification(cv_image)
+                #rospy.loginfo('detected {}'.format(state))
                 return light_num_wp, state
         self.waypoints = None
         return -1, TrafficLight.UNKNOWN

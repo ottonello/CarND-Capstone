@@ -11,7 +11,7 @@ from util import label_map_util
 import time
 
 class TLClassifier(object):
-    def __init__(self, sim):
+    def __init__(self):
         # Load categories
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         labels_file = curr_dir + '/label_map.pbtxt'
@@ -71,20 +71,21 @@ class TLClassifier(object):
 
         min_score_threshold = .50
         
+        class_name = None
         for i in range(boxes.shape[0]):
             if scores is None or scores[i] > min_score_threshold:
 
                 class_name = self.category_index[classes[i]]['name']
 
                 if class_name == 'Red':
-                    self.traffic_light = TrafficLight.RED
+                    traffic_light = TrafficLight.RED
                 elif class_name == 'Green':
-                    self.traffic_light = TrafficLight.GREEN
+                    traffic_light = TrafficLight.GREEN
                 elif class_name == 'Yellow':
-                    self.traffic_light = TrafficLight.YELLOW
+                    traffic_light = TrafficLight.YELLOW
 
                 self.image_np_deep = image
 
-        rospy.loginfo('tl found: {}'.format(class_name))
+        #rospy.loginfo('tl found: {}'.format(class_name))
 
-        return self.current_light
+        return traffic_light
