@@ -85,20 +85,21 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
-        light_wp, state = self.process_traffic_lights()
+        detected_tl_waypoint, state = self.process_traffic_lights()
         
         if self.current_state != state:
+            # Reset state
             self.state_count = 0
             self.current_state = state
-        elif self.state_count >= self.DETECTION_THRESHOLD:
 
+        elif self.state_count >= self.DETECTION_THRESHOLD:
+            # From now on we take it as a good detection
             self.last_state = self.current_state
-            light_wp = light_wp if state == TrafficLight.RED else -1
-            self.last_wp = light_wp
-            self.traffic_light_pub.publish(Int32(light_wp))
+            
+            detected_tl_waypoint = detected_tl_waypoint if state == TrafficLight.RED else -1
+            self.traffic_light_pub.publish(Int32(detected_tl_waypoint))
         else:
-            self.traffic_light_pub.publish(Int32(self.last_wp))
-        self.state_count += 1
+            self.state_count += 1
 
     def get_class_name(self, code):
         if code == TrafficLight.RED:

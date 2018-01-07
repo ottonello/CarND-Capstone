@@ -147,12 +147,7 @@ class WaypointUpdater(object):
         # rospy.logwarn("Got traffic waypoiny: %s", str(msg.data))
         prev_red_light_waypoint = self.red_light_waypoint
         self.red_light_waypoint = msg.data if msg.data else None
-
-        # if prev_red_light_waypoint != self.red_light_waypoint:
-        # if self.red_light_waypoint:
-            # if publish_on_light_change:
-            # self.update_and_publish() # Refresh if next traffic light has changed
-
+        
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
         pass
