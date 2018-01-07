@@ -35,3 +35,5 @@ Once you have an inference graph, copy to ros/src/tl_detector/light_classificati
 
 
 MobileNet - not good? (try on samples besides sim)
+
+Right now-using faster_rcnn with 10000 training steps

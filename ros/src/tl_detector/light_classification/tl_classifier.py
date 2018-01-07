@@ -23,7 +23,7 @@ class TLClassifier(object):
         self.image_np_deep = None
 
         # Load inference graph
-        frozen_graph_file = curr_dir + '/frozen_sim_inception/frozen_inference_graph.pb'
+        frozen_graph_file = curr_dir + '/inference_graph/frozen_inference_graph.pb'
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
