@@ -112,7 +112,7 @@ class DBWNode(object):
                                                                     cross_track_error,
                                                                     duration_seconds)
                 
-                rospy.logwarn('Target lv={} throttle={} brake={} steering={}'.format(target_linear_velocity, throttle, brake, steering))
+                # rospy.logwarn('Target lv={} throttle={} brake={} steering={}'.format(target_linear_velocity, throttle, brake, steering))
 
                 if not self.is_dbw_enabled or abs(self.current_velocity.twist.linear.x) < 1e-5 and abs(self.proposed_velocity.twist.linear.x) < 1e-5:
                     self.controller.reset()

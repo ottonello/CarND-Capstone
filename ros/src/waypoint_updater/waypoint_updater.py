@@ -5,6 +5,7 @@ import copy
 from geometry_msgs.msg import PoseStamped, Pose
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
+from enum import Enum
 
 import math
 import sys
@@ -23,8 +24,17 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+# Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 200
 PUBLISH_RATE = 20
+# Target velocity will be set to 0 for each waypoint this distance from the target waypoint
+STOP_DISTANCE = 3
+BREAKING_ACCELERATION = 0.5
+
+class State(Enum):
+    DRIVE = 0
+    STOP = 1
+
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -38,37 +48,38 @@ class WaypointUpdater(object):
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-
         # Add State variables
+        self.state = State.DRIVE
         self.base_waypoints = []  # List of waypoints, as received from /base_waypoints
-        self.base_wp_orig_v = []  # Original velocities of the waypoints
         self.current_pose = None # Car pose
-        self.red_light_waypoint = None # Waypoint index of the next red light
+        self.stop_waypoint = None # Waypoint index of the next red light
         self.msg_seq = 0 # Sequence number of /final_waypoints message
-        self.accel = rospy.get_param('~target_brake_accel', -.5)     # Target brake acceleration
         
-        # Launch periodic publishing into /final_waypoints
+        # Start periodic publishing into /final_waypoints
         rate = rospy.Rate(PUBLISH_RATE)
         while not rospy.is_shutdown():
             self.update_and_publish()
             rate.sleep()
 
-    def update_and_publish(self):
-        next_waypoint_idx = self._find_next_waypoint()
 
-        if next_waypoint_idx is not None:
+    def update_and_publish(self):
+        next_waypoint_index = self._find_next_waypoint()
+
+        if next_waypoint_index is not None:
             num_base_wp = len(self.base_waypoints)
-            waypoint_indices = [idx % num_base_wp for idx in range( next_waypoint_idx,  next_waypoint_idx+LOOKAHEAD_WPS)]
+            waypoint_indices = [idx % num_base_wp for idx in range( next_waypoint_index,  next_waypoint_index+LOOKAHEAD_WPS)]
             final_waypoints = [self.base_waypoints[wp] for wp in waypoint_indices]
             
-            # rospy.logwarn('stop {}  {}'.format(self.red_light_waypoint, waypoint_indices))
-            if self.red_light_waypoint and self.red_light_waypoint in waypoint_indices:
-                red_idx = waypoint_indices.index(self.red_light_waypoint)
+            if self.state == State.STOP \
+                    and self.stop_waypoint \
+                    and self.stop_waypoint in waypoint_indices:
+                stop_wp_index = waypoint_indices.index(self.stop_waypoint)
+                final_waypoints = self._decelerate(final_waypoints, next_waypoint_index, stop_wp_index)
 
-                final_waypoints = self._decelerate(final_waypoints, next_waypoint_idx, red_idx)
-            
-            # Publish final waypoints
             self.publish_msg(final_waypoints)
+        else:
+            rospy.logerr("Couldn't find next navigation waypoint - lost tracking?")
+        
 
     def euclidean_distance(self, p1, p2):
         delta_x = p1.x - p2.x
@@ -97,20 +108,21 @@ class WaypointUpdater(object):
             v = -1.
 
             d += step
-            # Set speed to 0 whenever close to the stopping waypoint
-            if d > 3:
-                v = math.sqrt(2 * abs(self.accel) * d )
+            # Set speed to 0 around the stopping waypoint
+            if d > STOP_DISTANCE:
+                v = math.sqrt(2 * abs(BREAKING_ACCELERATION) * d )
             self.set_waypoint_velocity(new_waypoints, idx, v)
 
         return new_waypoints
 
     def _find_next_waypoint(self):
+        # Safeguard for initialization state
         if not self.current_pose or not self.base_waypoints:
             return
 
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
-        wp_idx = None
+        closest_waypoint_index = None
         dist = sys.maxint
                 
         # Find closest waypoint
@@ -120,8 +132,8 @@ class WaypointUpdater(object):
 
             if wp_d < dist:
                 dist = wp_d
-                wp_idx = i
-        return wp_idx
+                closest_waypoint_index = i
+        return closest_waypoint_index
 
     def publish_msg(self, final_waypoints):
         waypoint_msg = Lane()
@@ -139,13 +151,17 @@ class WaypointUpdater(object):
         waypoints = msg.waypoints
         num_wp = len(waypoints)
 
-        self.base_wp_orig_v = [self.get_waypoint_velocity(waypoints, idx) for idx in range(num_wp)]
         self.base_waypoints = waypoints
 
 
     def traffic_cb(self, msg):
-        # rospy.loginfo("Got traffic waypoint: {}".format(msg.data))
-        self.red_light_waypoint = msg.data if msg.data else None
+        # rospy.loginfo("Got traffic light waypoint: {}".format(msg.data))
+        if msg.data:
+            self.stop_waypoint = msg.data
+            self.state = State.STOP
+        else:
+            self.stop_waypoint = None
+            self.state = State.DRIVE
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
