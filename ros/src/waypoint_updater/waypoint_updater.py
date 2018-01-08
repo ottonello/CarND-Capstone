@@ -63,13 +63,10 @@ class WaypointUpdater(object):
             
             # rospy.logwarn('stop {}  {}'.format(self.red_light_waypoint, waypoint_indices))
             if self.red_light_waypoint and self.red_light_waypoint in waypoint_indices:
-                
                 red_idx = waypoint_indices.index(self.red_light_waypoint)
 
                 final_waypoints = self._decelerate(final_waypoints, next_waypoint_idx, red_idx)
-            else:
-                red_idx = None
-
+            
             # Publish final waypoints
             self.publish_msg(final_waypoints)
 
