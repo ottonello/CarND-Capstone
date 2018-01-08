@@ -94,7 +94,7 @@ class WaypointUpdater(object):
 
         d = 0.
         for idx in reversed(range(stop_index)):
-            v = 0.
+            v = -1.
 
             d += step
             # Set speed to 0 whenever close to the stopping waypoint

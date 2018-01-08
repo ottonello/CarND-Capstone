@@ -105,11 +105,14 @@ class DBWNode(object):
                 target_angular_velocity = self.proposed_velocity.twist.angular.z
                 cross_track_error = self._get_cross_track_error(self.final_waypoints, self.current_pose)
 
+
                 throttle, brake, steering = self.controller.control(target_linear_velocity,
                                                                     target_angular_velocity,
                                                                     current_linear_velocity, 
                                                                     cross_track_error,
                                                                     duration_seconds)
+                
+                rospy.logwarn('Target lv={} throttle={} brake={} steering={}'.format(target_linear_velocity, throttle, brake, steering))
 
                 if not self.is_dbw_enabled or abs(self.current_velocity.twist.linear.x) < 1e-5 and abs(self.proposed_velocity.twist.linear.x) < 1e-5:
                     self.controller.reset()
