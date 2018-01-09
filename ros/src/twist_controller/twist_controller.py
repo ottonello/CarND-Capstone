@@ -16,6 +16,7 @@ class Controller(object):
         self.linear_pid = PID(kp=0.8, ki=0, kd=0.05, mn=self.params.decel_limit, mx=0.5 * self.params.accel_limit)
         self.yaw_controller = YawController(self.params.wheel_base, self.params.steer_ratio, min_speed, self.params.max_lat_accel, self.params.max_steer_angle)
         self.steering_pid = PID(kp=0.25, ki=0.001, kd=0.5, mn=-self.params.max_steer_angle, mx=self.params.max_steer_angle)
+
         self.throttle_lpf = LowPassFilter(tau = 3, ts = 1)
         self.steer_lpf = LowPassFilter(tau = 3, ts = 1)
 

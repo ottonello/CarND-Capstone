@@ -160,26 +160,24 @@ class DBWNode(object):
     def current_pose_cb(self, message):
         self.current_pose = message
 
-    def _get_xy_from_waypoints(self, waypoints):
-        return list(map(lambda waypoint: [waypoint.pose.pose.position.x, waypoint.pose.pose.position.y], waypoints))
 
     def _get_cross_track_error(self, final_waypoints, current_pose):
         origin = final_waypoints[0].pose.pose.position
 
-        waypoints_matrix = self._get_xy_from_waypoints(final_waypoints)
-
-        shifted_matrix = waypoints_matrix - np.array([origin.x, origin.y])
+        get_xy = lambda waypoint: [waypoint.pose.pose.position.x, waypoint.pose.pose.position.y]
+        shifted_waypoints = list(map(get_xy, final_waypoints)) - np.array([origin.x, origin.y])
 
         n = len(final_waypoints) -1
-        angle = np.arctan2(shifted_matrix[n, 1] -shifted_matrix[n-1, 1], shifted_matrix[n, 0]- shifted_matrix[n-1, 0])
+        angle = np.arctan2(shifted_waypoints[n, 1] -shifted_waypoints[n-1, 1], shifted_waypoints[n, 0]- shifted_waypoints[n-1, 0])
+        
         rotation_matrix = np.array([
                 [np.cos(angle), -np.sin(angle)],
                 [np.sin(angle), np.cos(angle)]
             ])
 
-        rotated_matrix = np.dot(shifted_matrix, rotation_matrix)
+        rotated_matrix = np.dot(shifted_waypoints, rotation_matrix)
 
-        coefficients = np.polyfit(rotated_matrix[:, 0], rotated_matrix[:, 1], 3)
+        coefficients = np.polyfit(rotated_matrix[:, 0], rotated_matrix[:, 1], 2)
 
         shifted_pose = np.array([current_pose.pose.position.x - origin.x, current_pose.pose.position.y - origin.y])
         rotated_pose = np.dot(shifted_pose, rotation_matrix)
@@ -189,8 +187,8 @@ class DBWNode(object):
         actual_y_value = rotated_pose[1]
         cte = expected_y_value - actual_y_value
 
-        if cte > 0.2:
-            rospy.logwarn('CTE={}'.format(cte))
+        # if cte > 0.2:
+        # rospy.logwarn('CTE={}'.format(cte))
 
         return cte
 
