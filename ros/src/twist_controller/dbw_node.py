@@ -102,20 +102,15 @@ class DBWNode(object):
                 target_linear_velocity = self.proposed_velocity.twist.linear.x
 
                 target_angular_velocity = self.proposed_velocity.twist.angular.z
-                cross_track_error = self._get_cross_track_error(self.final_waypoints, self.current_pose)
-
 
                 throttle, brake, steering = self.controller.control(target_linear_velocity,
                                                                     target_angular_velocity,
                                                                     current_linear_velocity, 
-                                                                    cross_track_error,
                                                                     duration_seconds)
                 
                 # rospy.logwarn('Target lv={} throttle={} brake={} steering={}'.format(target_linear_velocity, throttle, brake, steering))
 
-                if not self.is_dbw_enabled \
-                        or abs(self.current_velocity.twist.linear.x) < 1e-5 \
-                        and abs(self.proposed_velocity.twist.linear.x) < 1e-5:
+                if not self.is_dbw_enabled:
                     self.controller.reset()
 
                 if self.is_dbw_enabled:
@@ -160,37 +155,6 @@ class DBWNode(object):
     def current_pose_cb(self, message):
         self.current_pose = message
 
-
-    def _get_cross_track_error(self, final_waypoints, current_pose):
-        origin = final_waypoints[0].pose.pose.position
-
-        get_xy = lambda waypoint: [waypoint.pose.pose.position.x, waypoint.pose.pose.position.y]
-        shifted_waypoints = list(map(get_xy, final_waypoints)) - np.array([origin.x, origin.y])
-
-        n = len(final_waypoints) -1
-        angle = np.arctan2(shifted_waypoints[n, 1] -shifted_waypoints[n-1, 1], shifted_waypoints[n, 0]- shifted_waypoints[n-1, 0])
-        
-        rotation_matrix = np.array([
-                [np.cos(angle), -np.sin(angle)],
-                [np.sin(angle), np.cos(angle)]
-            ])
-
-        rotated_matrix = np.dot(shifted_waypoints, rotation_matrix)
-
-        coefficients = np.polyfit(rotated_matrix[:, 0], rotated_matrix[:, 1], 2)
-
-        shifted_pose = np.array([current_pose.pose.position.x - origin.x, current_pose.pose.position.y - origin.y])
-        rotated_pose = np.dot(shifted_pose, rotation_matrix)
-
-        expected_y_value = np.polyval(coefficients, rotated_pose[0])
-
-        actual_y_value = rotated_pose[1]
-        cte = expected_y_value - actual_y_value
-
-        # if cte > 0.2:
-        # rospy.logwarn('CTE={}'.format(cte))
-
-        return cte
 
 if __name__ == '__main__':
     DBWNode()
