@@ -9,6 +9,7 @@ from enum import Enum
 
 import math
 import sys
+import tf
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
 
@@ -111,6 +112,8 @@ class WaypointUpdater(object):
             # Set speed to 0 around the stopping waypoint
             if d > STOP_DISTANCE:
                 v = math.sqrt(2 * abs(BREAKING_ACCELERATION) * d )
+                if v < 1.:
+                    v = 0.
             self.set_waypoint_velocity(new_waypoints, idx, v)
 
         return new_waypoints
@@ -131,9 +134,21 @@ class WaypointUpdater(object):
             wp_d = dl(self.current_pose.position, self.base_waypoints[i].pose.pose.position)
 
             if wp_d < dist:
-                dist = wp_d
-                closest_waypoint_index = i
+                if self.__is_behind(self.current_pose, self.base_waypoints[i]):
+                    dist = wp_d
+                    closest_waypoint_index = i
         return closest_waypoint_index
+
+    def __is_behind(self, pose, waypoint):
+        map_x = waypoint.pose.pose.position.x
+        map_y = waypoint.pose.pose.position.y
+
+        heading = math.atan2((map_y - pose.position.y), (map_x - pose.position.x))
+        quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+        _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        angle = abs(yaw - heading)
+
+        return angle > (math.pi / 4)
 
     def publish_msg(self, final_waypoints):
         waypoint_msg = Lane()

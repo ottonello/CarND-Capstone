@@ -18,7 +18,7 @@ class TLDetector(object):
     def __init__(self):
         # Start 'seeing' traffic lights only when we're some meters away!
         # - faster_rcnn starts seeing around 60m away
-        self.MIN_DETECTION_DIST = 60.0
+        self.MIN_DETECTION_DIST = 80.0
 
         # Detection is considered valid after 'n' repeated observations
         self.DETECTION_THRESHOLD = 3

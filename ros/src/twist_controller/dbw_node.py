@@ -61,12 +61,9 @@ class DBWNode(object):
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
-        self.steer_pub = rospy.Publisher('/vehicle/steering_cmd',
-                                         SteeringCmd, queue_size=1)
-        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd',
-                                            ThrottleCmd, queue_size=1)
-        self.brake_pub = rospy.Publisher('/vehicle/brake_cmd',
-                                         BrakeCmd, queue_size=1)
+        self.steer_pub = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
+        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=1)
+        self.brake_pub = rospy.Publisher('/vehicle/brake_cmd', BrakeCmd, queue_size=1)
 
         # Create `TwistController` object
         params = Params(vehicle_mass, fuel_capacity, brake_deadband, decel_limit, accel_limit, wheel_radius, wheel_base, steer_ratio, max_lat_accel, max_steer_angle)
@@ -93,7 +90,9 @@ class DBWNode(object):
         while not rospy.is_shutdown():
             # Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
-            if (self.current_velocity is not None) and (self.proposed_velocity is not None) and (self.final_waypoints is not None):
+            if (self.current_velocity is not None) \
+                and (self.proposed_velocity is not None) \
+                and (self.final_waypoints is not None):
                 current_time = rospy.get_rostime()
                 ros_duration = current_time - self.previous_loop_time
                 duration_seconds = ros_duration.secs + (1e-9 * ros_duration.nsecs)
@@ -114,7 +113,9 @@ class DBWNode(object):
                 
                 # rospy.logwarn('Target lv={} throttle={} brake={} steering={}'.format(target_linear_velocity, throttle, brake, steering))
 
-                if not self.is_dbw_enabled or abs(self.current_velocity.twist.linear.x) < 1e-5 and abs(self.proposed_velocity.twist.linear.x) < 1e-5:
+                if not self.is_dbw_enabled \
+                        or abs(self.current_velocity.twist.linear.x) < 1e-5 \
+                        and abs(self.proposed_velocity.twist.linear.x) < 1e-5:
                     self.controller.reset()
 
                 if self.is_dbw_enabled:
@@ -150,7 +151,7 @@ class DBWNode(object):
         """
             message: bool
         """
-        rospy.logwarn("DBW_ENABLED %s" % message)
+        rospy.logwarn("DBW ENABLED=%s" % message)
         self.is_dbw_enabled = message.data
 
     def final_waypoints_cb(self, message):
