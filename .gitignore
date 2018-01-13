@@ -4,3 +4,7 @@ build
 devel
 
 profile.tmp
+
+vis/\.venv/
+
+ros/src/tl_detector/light_classification/inference_graph/frozen_inference_graph\.pb

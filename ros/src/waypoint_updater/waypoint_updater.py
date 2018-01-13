@@ -67,6 +67,8 @@ class WaypointUpdater(object):
         next_waypoint_index = self._find_next_waypoint()
 
         if next_waypoint_index is not None:
+            # rospy.logwarn('Next waypoint: {} v: {} av: {}'.format(next_waypoint_index, self.base_waypoints[next_waypoint_index].twist.twist.linear,  self.base_waypoints[next_waypoint_index].twist.twist.angular))
+
             num_base_wp = len(self.base_waypoints)
             waypoint_indices = [idx % num_base_wp for idx in range( next_waypoint_index,  next_waypoint_index+LOOKAHEAD_WPS)]
             final_waypoints = [self.base_waypoints[wp] for wp in waypoint_indices]
@@ -78,8 +80,8 @@ class WaypointUpdater(object):
                 final_waypoints = self._decelerate(final_waypoints, next_waypoint_index, stop_wp_index)
 
             self.publish_msg(final_waypoints)
-        else:
-            rospy.logerr("Couldn't find next navigation waypoint - lost tracking?")
+        # elif self.base_waypoints:
+            # rospy.logerr("Couldn't find next navigation waypoint - lost tracking?")
         
 
     def euclidean_distance(self, p1, p2):
