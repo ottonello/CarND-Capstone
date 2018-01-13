@@ -32,17 +32,19 @@ python object_detection/train.py --logtostderr --pipeline_config_path=models/ssd
 python object_detection/export_inference_graph.py  --pipeline_config_path=models/ssd_inception-trafficsign.config --trained_checkpoint_prefix=train_dir/ssd_inception/model.ckpt-5000 --output_directory=inference_graphs/ssd_inception
 
 
+python object_detection/train.py --pipeline_config_path=models/faster_rcnn_resnet50_trafficsign.config --train_dir=train_dir/faster_rcnn50
+python object_detection/export_inference_graph.py  --pipeline_config_path=models/faster_rcnn_resnet50_trafficsign.config --trained_checkpoint_prefix=train_dir/faster_rcnn50/model.ckpt-5000 --output_directory=inference_graphs/faster_rcnn50
 
 Inference
 =======
 https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
 
 
-ssd_inception
-Average inference took: 16.8356101695
-
 ssd_mobilenet
 Average inference took: 11.7727288136
+
+ssd_inception
+Average inference took: 16.8356101695
 
 faster_rcnn
 Average inference took: 77.3651694915
