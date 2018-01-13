@@ -52,7 +52,6 @@ class TLDetector(object):
         self.light_classifier = TLClassifier()
         self.listener = tf.TransformListener()
 
-        self.best_waypoint = 0
         self.camera_image = None
 
         # Publishes the state for each traffic light, useful to get training data
@@ -101,16 +100,6 @@ class TLDetector(object):
         else:
             self.state_count += 1
 
-    def get_class_name(self, code):
-        if code == TrafficLight.RED:
-            return "RED"
-        elif code == TrafficLight.GREEN:
-            return "GREEN"
-        elif code == TrafficLight.YELLOW:
-            return "YELLOW"
-        else:
-            return "UNKNOWN"
-
     def euclidean_distance(self, p1, p2):
         delta_x = p1.x - p2.x
         delta_y = p1.y - p2.y
@@ -126,17 +115,14 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        best_waypoint = self.best_waypoint
+        min_dist = sys.maxint
         if self.waypoints is not None:
-            waypoints = self.waypoints.waypoints
-            min_dist = self.euclidean_distance(pose.position, waypoints[0].pose.pose.position)
-            for i, point in enumerate(waypoints):
+            for i, point in enumerate(self.waypoints.waypoints):
                 dist = self.euclidean_distance(pose.position, point.pose.pose.position)
                 if dist < min_dist:
-                    best_waypoint = i
+                    closest_idx = i
                     min_dist = dist
-            self.best_waypoint = best_waypoint
-            return best_waypoint
+            return closest_idx
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -165,7 +151,7 @@ class TLDetector(object):
             return -1, TrafficLight.UNKNOWN
         else:
             classification = self.light_classifier.get_classification(cv_image)
-            # rospy.loginfo('Image classification={}'.format(self.get_class_name(classification)))
+            # rospy.loginfo('Image classification={}'.format(classification))
 
             closest_tl_waypoint_idx = self.get_closest_waypoint(self.tl_positions[closest_tl_idx])
 

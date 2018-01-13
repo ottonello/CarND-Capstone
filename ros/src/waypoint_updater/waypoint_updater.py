@@ -28,9 +28,8 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 # Number of waypoints we will publish. You can change this number
 LOOKAHEAD_WPS = 200
 PUBLISH_RATE = 20
-# Target velocity will be set to 0 for each waypoint this distance from the target waypoint
+# Target velocity will be set to 0 for each waypoint within this distance from the target waypoint
 STOP_DISTANCE = 3
-BREAKING_ACCELERATION = 0.5
 
 class State(Enum):
     DRIVE = 0
@@ -46,6 +45,8 @@ class WaypointUpdater(object):
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Lane, self.obstacle_cb)
 
+        # Acceleration should not exceed 10 m/s^2 and jerk should not exceed 10 m/s^3.
+        self.accel_limit = rospy.get_param('~accel_limit', 1.)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -113,7 +114,8 @@ class WaypointUpdater(object):
             d += step
             # Set speed to 0 around the stopping waypoint
             if d > STOP_DISTANCE:
-                v = math.sqrt(2 * abs(BREAKING_ACCELERATION) * d )
+                v = math.sqrt(2 * abs(self.accel_limit) * d )
+
                 if v < 1.:
                     v = 0.
             self.set_waypoint_velocity(new_waypoints, idx, v)

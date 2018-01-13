@@ -100,21 +100,20 @@ class DBWNode(object):
 
                 current_linear_velocity = self.current_velocity.twist.linear.x
                 target_linear_velocity = self.proposed_velocity.twist.linear.x
-
-                target_angular_velocity = self.proposed_velocity.twist.angular.z
+                target_yaw_rate = self.proposed_velocity.twist.angular.z
 
                 throttle, brake, steering = self.controller.control(target_linear_velocity,
-                                                                    target_angular_velocity,
+                                                                    target_yaw_rate,
                                                                     current_linear_velocity, 
                                                                     duration_seconds)
                 
                 # rospy.logwarn('Target lv={} throttle={} brake={} steering={}'.format(target_linear_velocity, throttle, brake, steering))
 
-                if not self.is_dbw_enabled:
-                    self.controller.reset()
-
                 if self.is_dbw_enabled:
                     self.publish(throttle, brake, steering)
+            if not self.is_dbw_enabled:
+                self.controller.reset()
+
             rate.sleep()
 
     def publish(self, throttle, brake, steer):

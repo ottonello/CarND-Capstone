@@ -19,6 +19,9 @@ class Controller(object):
         self.throttle_lpf = LowPassFilter(tau = 3, ts = 1)
         self.steer_lpf = LowPassFilter(tau = 3, ts = 1)
 
+        self.total_mass = self.params.vehicle_mass + self.params.fuel_capacity * GAS_DENSITY
+        self.brake_torque = self.total_mass * self.params.wheel_radius
+
     def reset(self):
         self.linear_pid.reset()
 
@@ -31,11 +34,10 @@ class Controller(object):
         steering = self.yaw_controller.get_steering(proposed_linear_velocity, proposed_angular_velocity, current_linear_velocity)
         steering = self.steer_lpf.filt(steering)
 
-        brake = 0
+        brake = 0.
         if(throttle <= 0):
-            total_mass = self.params.vehicle_mass + self.params.fuel_capacity * GAS_DENSITY
-            brake = total_mass * self.params.wheel_radius * abs(throttle)
+            brake = abs(throttle) * self.brake_torque
             brake = brake if brake > self.params.brake_deadband else 0.
-            throttle = 0
+            throttle = 0.
             
         return throttle, brake, steering
