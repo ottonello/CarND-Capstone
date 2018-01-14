@@ -90,6 +90,6 @@ class TLClassifier(object):
 
                 self.image_np_deep = image
 
-        # rospy.loginfo('tl found: {} in {} ms.'.format(class_name, millis))
+        rospy.loginfo('tl found: {} in {} ms.'.format(class_name, millis))
 
         return traffic_light

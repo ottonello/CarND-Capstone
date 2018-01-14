@@ -36,14 +36,16 @@ python object_detection/train.py --logtostderr --pipeline_config_path=models/ssd
 python object_detection/export_inference_graph.py  --pipeline_config_path=models/ssd_inception-trafficsign.config --trained_checkpoint_prefix=train_dir/ssd_inception/model.ckpt-5000 --output_directory=inference_graphs/ssd_inception
 
 
+Train on extra real data:
+python object_detection/train.py --pipeline_config_path=models/ssd_inception_keep_training.config --train_dir=train_dir/ssd_inception_real
+python object_detection/export_inference_graph.py  --pipeline_config_path=models/ssd_inception_keep_training.config --trained_checkpoint_prefix=train_dir/ssd_inception_real/model.ckpt-2000 --output_directory=inference_graphs/ssd_inception_real
+
+
+
+
 python object_detection/train.py --pipeline_config_path=models/faster_rcnn_resnet50_trafficsign.config --train_dir=train_dir/faster_rcnn50
 python object_detection/export_inference_graph.py  --pipeline_config_path=models/faster_rcnn_resnet50_trafficsign.config --trained_checkpoint_prefix=train_dir/faster_rcnn50/model.ckpt-5000 --output_directory=inference_graphs/faster_rcnn50
 
-
-
-
-python object_detection/train.py --pipeline_config_path=models/ssd_inception_keep_training.config --train_dir=train_dir/ssd_inception_real
-python object_detection/export_inference_graph.py  --pipeline_config_path=models/ssd_inception_keep_training.config --trained_checkpoint_prefix=train_dir/ssd_inception_real/model.ckpt-5000 --output_directory=inference_graphs/ssd_inception_real
 
 
 Inference
