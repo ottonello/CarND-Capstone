@@ -14,14 +14,14 @@ import math
 import numpy as np
 import sys
 
+# Detection is considered valid after 'n' repeated observations
+STATE_COUNT_THRESHOLD = 3
+
 class TLDetector(object):
     def __init__(self):
         # Start 'seeing' traffic lights only when we're some meters away!
         # - faster_rcnn starts seeing around 60m away
         self.MIN_DETECTION_DIST = 80.0
-
-        # Detection is considered valid after 'n' repeated observations
-        self.DETECTION_THRESHOLD = 3
 
         rospy.init_node('tl_detector')
 
@@ -46,7 +46,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
         self.tl_positions = [Pose(position=Point(x= p[0], y= p[1])) for p in self.config['stop_line_positions']]
     
-        self.traffic_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
@@ -57,7 +57,7 @@ class TLDetector(object):
         # Publishes the state for each traffic light, useful to get training data
         self.TrafficLightState = rospy.Publisher('/traffic_light_state', Int32, queue_size=1)
 
-        self.current_state = TrafficLight.UNKNOWN
+        self.state = TrafficLight.UNKNOWN
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
@@ -84,21 +84,25 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
-        detected_tl_waypoint, state = self.process_traffic_lights()
+        light_wp, state = self.process_traffic_lights()
         
-        if self.current_state != state:
-            # Reset state
+        '''
+        Publish upcoming red lights at camera frequency.
+        Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
+        of times till we start using it. Otherwise the previous stable state is
+        used.
+        '''
+        if self.state != state:
             self.state_count = 0
-            self.current_state = state
-
-        elif self.state_count >= self.DETECTION_THRESHOLD:
-            # From now on we take it as a good detection
-            self.last_state = self.current_state
-            
-            detected_tl_waypoint = detected_tl_waypoint if state == TrafficLight.RED or state == TrafficLight.YELLOW else -1
-            self.traffic_light_pub.publish(Int32(detected_tl_waypoint))
+            self.state = state
+        elif self.state_count >= STATE_COUNT_THRESHOLD:
+            self.last_state = self.state
+            light_wp = light_wp if state == TrafficLight.RED else -1
+            self.last_wp = light_wp
+            self.upcoming_red_light_pub.publish(Int32(light_wp))
         else:
-            self.state_count += 1
+            self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+        self.state_count += 1
 
     def euclidean_distance(self, p1, p2):
         delta_x = p1.x - p2.x

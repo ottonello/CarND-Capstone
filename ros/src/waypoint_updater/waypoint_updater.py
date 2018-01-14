@@ -84,13 +84,6 @@ class WaypointUpdater(object):
         # elif self.base_waypoints:
             # rospy.logerr("Couldn't find next navigation waypoint - lost tracking?")
         
-
-    def euclidean_distance(self, p1, p2):
-        delta_x = p1.x - p2.x
-        delta_y = p1.y - p2.y
-        return math.sqrt(delta_x*delta_x + delta_y*delta_y)
-
-
     def _decelerate(self, waypoints, next_waypoint_idx, stop_index):
         """
         Decelerate a list of wayponts so that they stop on stop_index
@@ -103,10 +96,6 @@ class WaypointUpdater(object):
         dist = self.distance(new_waypoints, 0, stop_index)
         step = dist / stop_index
         
-        # rospy.logwarn('Distance to stopping point, points: {} {}'.
-        #     format(self.euclidean_distance(self.current_pose.position, new_waypoints[stop_index].pose.pose.position),
-        #         stop_index))
-
         d = 0.
         for idx in reversed(range(stop_index)):
             v = -1.

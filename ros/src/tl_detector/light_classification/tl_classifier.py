@@ -12,6 +12,13 @@ import time
 import datetime
 
 class TLClassifier(object):
+    """
+     Detect Traffic lights and their boundary boxes in images using Tensorflow Object Detection API.
+     Code is based on the inference sample at:
+     https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
+    """
+    INFERENCE_SCORE_THRESHOLD = .5
+
     def __init__(self):
         # Load categories
         curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -21,7 +28,6 @@ class TLClassifier(object):
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=num_classes,
                                                                     use_display_name=True)        
         self.category_index = label_map_util.create_category_index(categories)
-        self.image_np_deep = None
 
         # Load inference graph
         frozen_graph_file = curr_dir + '/inference_graph/frozen_inference_graph.pb'
@@ -57,39 +63,38 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        traffic_light = TrafficLight.UNKNOWN
-
         image_expanded = np.expand_dims(image, axis=0)
+
         a = datetime.datetime.now()
+
         with self.detection_graph.as_default():
             (boxes, scores, classes, num) = self.sess.run(
                 [self.detection_boxes, self.detection_scores,
                  self.detection_classes, self.num_detections],
                 feed_dict={self.image_tensor: image_expanded})
-        b = datetime.datetime.now()
-        millis = (b - a).total_seconds() * 1000
+
 
         boxes = np.squeeze(boxes)
         scores = np.squeeze(scores)
         classes = np.squeeze(classes).astype(np.int32)
 
-        min_score_threshold = .50
-        
+        # This implementation returns the last detected traffic light with enough confidence!
+        detection = TrafficLight.UNKNOWN
         class_name = None
         for i in range(boxes.shape[0]):
-            if scores is None or scores[i] > min_score_threshold:
-
+            if scores is None or scores[i] > self.INFERENCE_SCORE_THRESHOLD:
                 class_name = self.category_index[classes[i]]['name']
 
                 if class_name == 'Red':
-                    traffic_light = TrafficLight.RED
+                    detection = TrafficLight.RED
                 elif class_name == 'Green':
-                    traffic_light = TrafficLight.GREEN
+                    detection = TrafficLight.GREEN
                 elif class_name == 'Yellow':
-                    traffic_light = TrafficLight.YELLOW
+                    detection = TrafficLight.YELLOW
 
-                self.image_np_deep = image
+        b = datetime.datetime.now()
+        millis = (b - a).total_seconds() * 1000
 
-        rospy.loginfo('tl found: {} in {} ms.'.format(class_name, millis))
+        rospy.loginfo('TrafficLight found: {} in {} ms.'.format(class_name, millis))
 
-        return traffic_light
+        return TrafficLight.UNKNOWN
