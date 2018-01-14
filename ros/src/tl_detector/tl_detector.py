@@ -95,7 +95,7 @@ class TLDetector(object):
             # From now on we take it as a good detection
             self.last_state = self.current_state
             
-            detected_tl_waypoint = detected_tl_waypoint if state == TrafficLight.RED else -1
+            detected_tl_waypoint = detected_tl_waypoint if state == TrafficLight.RED or state == TrafficLight.YELLOW else -1
             self.traffic_light_pub.publish(Int32(detected_tl_waypoint))
         else:
             self.state_count += 1
