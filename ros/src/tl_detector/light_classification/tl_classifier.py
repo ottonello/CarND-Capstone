@@ -9,6 +9,7 @@ from collections import defaultdict
 from io import StringIO
 from util import label_map_util
 import time
+import datetime
 
 class TLClassifier(object):
     def __init__(self):
@@ -59,11 +60,14 @@ class TLClassifier(object):
         traffic_light = TrafficLight.UNKNOWN
 
         image_expanded = np.expand_dims(image, axis=0)
+        a = datetime.datetime.now()
         with self.detection_graph.as_default():
             (boxes, scores, classes, num) = self.sess.run(
                 [self.detection_boxes, self.detection_scores,
                  self.detection_classes, self.num_detections],
                 feed_dict={self.image_tensor: image_expanded})
+        b = datetime.datetime.now()
+        millis = (b - a).total_seconds() * 1000
 
         boxes = np.squeeze(boxes)
         scores = np.squeeze(scores)
@@ -86,6 +90,6 @@ class TLClassifier(object):
 
                 self.image_np_deep = image
 
-        # rospy.loginfo('tl found: {}'.format(class_name))
+        # rospy.loginfo('tl found: {} in {} ms.'.format(class_name, millis))
 
         return traffic_light
