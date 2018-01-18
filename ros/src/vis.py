@@ -74,11 +74,13 @@ class Visualizer(object):
 
 	def animate(self, i):
 		self.ax2.clear()
-		self.ax2.plot(self.waypoints_x, self.waypoints_y, '.')
+		self.ax2.set_xticks([])
+		self.ax2.set_yticks([])
+		self.ax2.plot(self.waypoints_x, self.waypoints_y, 'o')
 		if self.follow_car:
 			plt.axis((self.last_x - self.half_view_size, self.last_x+self.half_view_size, self.last_y -self.half_view_size, self.last_y+self.half_view_size))
 		try:
-			self.ax2.plot(self.xs, self.ys)
+			self.ax2.plot(self.xs, self.ys, 'r-')
 		except ValueError:
 			print('Differing sizes of x and y')
 			pass
@@ -90,9 +92,10 @@ class Visualizer(object):
 	def init_plot(self):
 		fig = plt.figure(figsize=(20,15))
 		self.ax2 = fig.add_subplot(1,1,1)
+		self.ax2.set_xticks([])
+		self.ax2.set_yticks([])
 		ani = animation.FuncAnimation(fig, self.animate, interval=1000)
+		plt.tight_layout()
 		plt.show()
-
-
 
 if __name__ == "__main__": Visualizer()
