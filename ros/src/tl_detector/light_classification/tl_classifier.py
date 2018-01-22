@@ -17,7 +17,7 @@ class TLClassifier(object):
      Code is based on the inference sample at:
      https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
     """
-    INFERENCE_SCORE_THRESHOLD = .4
+    INFERENCE_SCORE_THRESHOLD = .5
 
     def __init__(self):
         # Load categories
@@ -81,6 +81,7 @@ class TLClassifier(object):
         # This implementation returns the last detected traffic light with enough confidence!
         detection = TrafficLight.UNKNOWN
         class_name = None
+        detection_score = 0.0
         for i in range(boxes.shape[0]):
             if scores is None or scores[i] > self.INFERENCE_SCORE_THRESHOLD:
                 class_name = self.category_index[classes[i]]['name']
@@ -91,10 +92,11 @@ class TLClassifier(object):
                     detection = TrafficLight.GREEN
                 elif class_name == 'Yellow':
                     detection = TrafficLight.YELLOW
+                detection_score = scores[i]
 
         b = datetime.datetime.now()
         millis = (b - a).total_seconds() * 1000
 
-        rospy.loginfo('TrafficLight found: {} in {} ms.'.format(class_name, millis))
+        rospy.loginfo('TrafficLight found: {} in {} ms. - confidence={}'.format(class_name, millis, detection_score))
 
         return detection
