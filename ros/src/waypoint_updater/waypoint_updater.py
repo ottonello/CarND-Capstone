@@ -130,16 +130,26 @@ class WaypointUpdater(object):
                 dist = wp_d
                 closest_waypoint_index = i
 
-        map_x = self.base_waypoints[closest_waypoint_index].pose.pose.position.x
-        map_y = self.base_waypoints[closest_waypoint_index].pose.pose.position.y
+        if dist > 5:
+            """
+             Choose a distant waypoint if we're to far, makes the car go back to the track.
+             Ideally this should be replaced by generating an interpolated path.
+            """
+            closest_waypoint_index += 10
+        else:
+            map_x = self.base_waypoints[closest_waypoint_index].pose.pose.position.x
+            map_y = self.base_waypoints[closest_waypoint_index].pose.pose.position.y
 
-        heading = math.atan2((map_y - self.current_pose.position.y), (map_x - self.current_pose.position.x))
-        quaternion = (self.current_pose.orientation.x, self.current_pose.orientation.y, self.current_pose.orientation.z, self.current_pose.orientation.w)
-        _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
-        angle = abs(yaw - heading)
+            # Make sure the chosen waypoint is not behind the car
+            heading = math.atan2((map_y - self.current_pose.position.y), (map_x - self.current_pose.position.x))
+            quaternion = (self.current_pose.orientation.x, self.current_pose.orientation.y, self.current_pose.orientation.z, self.current_pose.orientation.w)
+            _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
+            angle = abs(yaw - heading)
 
-        if angle > (math.pi / 4):
-            closest_waypoint_index += 1
+            if angle > (math.pi / 4):
+                closest_waypoint_index += 1
+
+            # rospy.logerr('Closest waypoint={}'.format(closest_waypoint_index))
 
         return closest_waypoint_index
 

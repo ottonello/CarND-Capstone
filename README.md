@@ -67,3 +67,11 @@ cd CarND-Capstone/ros
 roslaunch launch/site.launch
 ```
 5. Confirm that traffic light detection works on real life images
+
+
+### Credits
+
+I took the idea of using Tensorflow Object Detection API from the following post by Anthony Sarkis:
+https://codeburst.io/self-driving-cars-implementing-real-time-traffic-light-detection-and-classification-in-2017-7d9ae8df1c58
+
+I also based my training dataset on his, which saved some time. I did add some more samples using Sloth.

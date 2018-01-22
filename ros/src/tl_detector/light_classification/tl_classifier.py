@@ -16,6 +16,9 @@ class TLClassifier(object):
      Detect Traffic lights and their boundary boxes in images using Tensorflow Object Detection API.
      Code is based on the inference sample at:
      https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
+
+     Original idea and(base) training data belong to Anthony Sarkis, here's his blogpost about it:
+     https://codeburst.io/self-driving-cars-implementing-real-time-traffic-light-detection-and-classification-in-2017-7d9ae8df1c58
     """
     INFERENCE_SCORE_THRESHOLD = .5
 
@@ -97,6 +100,6 @@ class TLClassifier(object):
         b = datetime.datetime.now()
         millis = (b - a).total_seconds() * 1000
 
-        rospy.loginfo('TrafficLight found: {} in {} ms. - confidence={}'.format(class_name, millis, detection_score))
+        # rospy.loginfo('TrafficLight found: {} in {} ms. - confidence={}'.format(class_name, millis, detection_score))
 
         return detection

@@ -6,6 +6,12 @@ import PIL.Image
 import time
 
 class ImageSaver(object):
+	""" 
+	In theory you should be able to use rosrun image_view image_view image:=/image_color to 
+	view and capture the images published to the topic but it wasn't working for me,
+	so I built this small image capture tool.
+	It will capture an image from /image_color whenever it receives any message on /do_capture.
+	"""
 	def __init__(self):
 		print('hi')
 		rospy.init_node('image_capture', anonymous=True)
