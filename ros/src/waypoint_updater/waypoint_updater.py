@@ -135,7 +135,7 @@ class WaypointUpdater(object):
              Choose a distant waypoint if we're to far, makes the car go back to the track.
              Ideally this should be replaced by generating an interpolated path.
             """
-            closest_waypoint_index += 10
+            closest_waypoint_index += 30
         else:
             map_x = self.base_waypoints[closest_waypoint_index].pose.pose.position.x
             map_y = self.base_waypoints[closest_waypoint_index].pose.pose.position.y
