@@ -4,6 +4,7 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 
 Simulator run:
 
+<blockquote class="imgur-embed-pub" lang="en" data-id="f6j1LdK"><a href="//imgur.com/f6j1LdK"></a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
 
 Traffic Light detection samples(parking lot data):
 
@@ -47,11 +48,13 @@ https://github.com/ottonello/CarND-Capstone/blob/master/trafficlight_training/mo
 Training data was based on the ones released by Anthony Sarkis', I added some samples to the sets to improve some areas where detection wasn't as good. Here's Anthony's blog post on how he implemented detection also using the object detection API: https://codeburst.io/self-driving-cars-implementing-real-time-traffic-light-detection-and-classification-in-2017-7d9ae8df1c58
 
 
-SSD Inception final training examples:
+Some SSD Inception final training examples:
 
 ![Simulator](https://raw.githubusercontent.com/ottonello/CarND-Capstone/master/trafficlight_training/inference_results_ssd_inception/4.jpg)
 
-![Parking lot sample](https://raw.githubusercontent.com/ottonello/CarND-Capstone/master/trafficsign_training/inference_results_ssd_inception/left0000.jpg)
+![Parking lot sample](https://raw.githubusercontent.com/ottonello/CarND-Capstone/master/trafficlight_training/inference_results_ssd_inception/left0000.jpg)
+
+More examples are located under the [samples folder](https://github.com/ottonello/CarND-Capstone/tree/master/trafficlight_training/inference_results_ssd_inception)
 
 
 ### Native Installation
