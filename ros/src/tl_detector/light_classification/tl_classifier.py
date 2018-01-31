@@ -55,6 +55,7 @@ class TLClassifier(object):
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
         self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
+        self.debug = False
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -100,6 +101,7 @@ class TLClassifier(object):
         b = datetime.datetime.now()
         millis = (b - a).total_seconds() * 1000
 
-        # rospy.loginfo('TrafficLight found: {} in {} ms. - confidence={}'.format(class_name, millis, detection_score))
+        if self.debug:
+            rospy.loginfo('TrafficLight found: {} in {} ms. - confidence={}'.format(class_name, millis, detection_score))
 
         return detection
