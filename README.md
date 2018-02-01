@@ -3,11 +3,11 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 ### Examples
 
 Simulator run:
-
-<blockquote class="imgur-embed-pub" lang="en" data-id="f6j1LdK"><a href="//imgur.com/f6j1LdK"></a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+https://www.youtube.com/watch?v=0fd9f3lCNRU
 
 Traffic Light detection samples(parking lot data):
-
+https://www.youtube.com/watch?v=ZhWebjFoCd8
+https://www.youtube.com/watch?v=PV1dIz3q17M
 
 ### Waypoint updates
 
